@@ -1,0 +1,43 @@
+service: quiz-bot-api
+
+provider:
+  name: aws
+  runtime: nodejs8.10
+  environment:
+    DYNAMODB_TABLE: ${self:service}-${self:provider.stage}
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:Scan
+        - dynamodb:PutItem
+      Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.DYNAMODB_TABLE}"
+
+functions:
+  fetch:
+    handler: handler.fetch
+    events:
+      - http:
+          path: /quizzes
+          method: get
+  create:
+    handler: handler.create
+    events:
+      - http:
+          path: /users/{id}/quiz
+          method: post
+
+resources:
+  Resources:
+    FOYTable:
+      Type: "AWS::DynamoDB::Table"
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: username
+            AttributeType: S
+        KeySchema:
+          - AttributeName: username
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: ${self:provider.environment.DYNAMODB_TABLE}
