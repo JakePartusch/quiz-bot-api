@@ -12,16 +12,39 @@ const getQuizzes = async () => {
   return result.Items;
 };
 
-const createQuiz = async (username, data) => {
-  await dynamoDb
-    .put({
+const createQuiz = async (username, answers) => {
+  const result = await dynamoDb
+    .get({
       TableName: process.env.DYNAMODB_TABLE,
-      Item: {
-        username,
-        data
+      Key: {
+        username
       }
     })
     .promise();
+  console.log(JSON.stringify(result.Item, null, 2));
+  if (result && result.Item) {
+    await dynamoDb
+      .put({
+        TableName: process.env.DYNAMODB_TABLE,
+        Item: {
+          ...result.Item,
+          answers,
+          completionTime: new Date().toISOString()
+        }
+      })
+      .promise();
+  } else {
+    await dynamoDb
+      .put({
+        TableName: process.env.DYNAMODB_TABLE,
+        Item: {
+          username,
+          answers,
+          startTime: new Date().toISOString()
+        }
+      })
+      .promise();
+  }
 };
 
 module.exports.fetch = async event => {
@@ -30,6 +53,10 @@ module.exports.fetch = async event => {
   console.log(JSON.stringify(data, null, 2));
   return {
     statusCode: 200,
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Credentials": true
+    },
     body: JSON.stringify(data)
   };
 };

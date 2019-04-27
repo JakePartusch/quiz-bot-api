@@ -9,6 +9,7 @@ provider:
     - Effect: Allow
       Action:
         - dynamodb:Scan
+        - dynamodb:GetItem
         - dynamodb:PutItem
       Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.DYNAMODB_TABLE}"
 
@@ -19,6 +20,7 @@ functions:
       - http:
           path: /quizzes
           method: get
+          cors: true
   create:
     handler: handler.create
     events:
